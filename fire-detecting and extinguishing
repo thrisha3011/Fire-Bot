@@ -1,0 +1,137 @@
+#include <Servo.h>
+
+#define enA 10
+#define in1 9
+#define in2 8
+#define in3 7
+#define in4 6
+#define enB 5
+#define ir_R A0
+#define ir_F A1
+#define ir_L A2
+#define servoPin A4
+#define pump A5
+
+int Speed = 160;
+int s1, s2, s3;
+Servo fireServo;
+
+void setup() {
+    Serial.begin(9600);
+    
+    pinMode(ir_R, INPUT);
+    pinMode(ir_F, INPUT);
+    pinMode(ir_L, INPUT);
+    pinMode(enA, OUTPUT);
+    pinMode(in1, OUTPUT);
+    pinMode(in2, OUTPUT);
+    pinMode(in3, OUTPUT);
+    pinMode(in4, OUTPUT);
+    pinMode(enB, OUTPUT);
+    pinMode(pump, OUTPUT);
+    
+    fireServo.attach(servoPin);
+
+    // Initial Servo Sweep
+    extinguishFire(90, 140);
+    extinguishFire(140, 40);
+    extinguishFire(40, 95);
+
+    analogWrite(enA, Speed);
+    analogWrite(enB, Speed);
+}
+
+void loop() {
+    s1 = analogRead(ir_R);
+    s2 = analogRead(ir_F);
+    s3 = analogRead(ir_L);
+
+    Serial.print(s1);
+    Serial.print("\t");
+    Serial.print(s2);
+    Serial.print("\t");
+    Serial.println(s3);
+
+    delay(50);
+
+    if (s1 < 250) {
+        extinguishFire(90, 40);
+        forward();
+        forward();
+  forward();
+  forward();
+    } else if (s2 < 350) {
+        extinguishFire(90, 140);
+        extinguishFire(140, 40);
+        extinguishFire(40, 90);
+    } else if (s3 < 250) {
+        extinguishFire(90, 140);
+        extinguishFire(140, 90);
+    } else if (s1 >= 251 && s1 <= 700) {
+        digitalWrite(pump, LOW);
+        moveBackward(100);
+        turnRight(200);
+    } else if (s2 >= 251 && s2 <= 800) {
+        digitalWrite(pump, LOW);
+        forward();
+    } else if (s3 >= 251 && s3 <= 700) {
+        digitalWrite(pump, LOW);
+        moveBackward(100);
+        turnLeft(200);
+    } else {
+        digitalWrite(pump, LOW);
+        Stop();
+    }
+}
+
+void extinguishFire(int startAngle, int endAngle) {
+    Stop();
+    digitalWrite(pump, HIGH);
+    for (int angle = startAngle; angle <= endAngle; angle += 3) {
+        fireServo.write(angle);
+        delay(20);
+    }
+    for (int angle = endAngle; angle >= startAngle; angle -= 3) {
+        fireServo.write(angle);
+        delay(20);
+    }
+}
+
+void moveBackward(int duration) {
+    digitalWrite(in1, LOW);
+    digitalWrite(in2, HIGH);
+    digitalWrite(in3, HIGH);
+    digitalWrite(in4, LOW);
+    delay(duration);
+}
+
+void forward() {
+    digitalWrite(in1, HIGH);
+    digitalWrite(in2, LOW);
+    digitalWrite(in3, LOW);
+    digitalWrite(in4, HIGH);
+   // delay(duration);
+}
+
+void turnRight(int duration) {
+    digitalWrite(in1, LOW);
+    digitalWrite(in2, HIGH);
+    digitalWrite(in3, LOW);
+    digitalWrite(in4, HIGH);
+    delay(duration);
+}
+
+void turnLeft(int duration) {
+    digitalWrite(in1, HIGH);
+    digitalWrite(in2, LOW);
+    digitalWrite(in3, HIGH);
+    digitalWrite(in4, LOW);
+    delay(duration);
+}
+
+void Stop() {
+    digitalWrite(in1, LOW);
+    digitalWrite(in2, LOW);
+    digitalWrite(in3, LOW);
+    digitalWrite(in4, LOW);
+}
